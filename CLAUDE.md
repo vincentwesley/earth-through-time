@@ -3,7 +3,7 @@
 A three.js globe that rewinds the continents 750 Myr using the Merdith et al. (2021) EarthByte plate model, with a Singapore pin. Static site on Cloudflare Pages. Public repo.
 
 ## Project rules (win over the house rules below where they conflict)
-- **Zero GitHub Actions.** The owner's Actions minutes are at 0. Never add a workflow, schedule or Dependabot version updates; never re-run or watch CI. Keep `.github/workflows/ci.yml` and `automerge.yml` as they are (unused). Verify locally, then merge your own PR with `gh api -X PUT repos/vincentwesley/earth-through-time/pulls/<n>/merge -f merge_method=squash`, and only once Actions is switched off for the repo (see `docs/HANDOVER.md`). One branch and one PR per milestone.
+- **Zero GitHub Actions.** The owner's Actions minutes are at 0. Never add a workflow, schedule or Dependabot version updates; never re-run or watch CI. Keep `.github/workflows/ci.yml` and `automerge.yml` as they are (unused). Verify locally, then merge your own PR with `gh api -X PUT repos/vincentwesley/earth-through-time/pulls/<n>/merge -f merge_method=squash`; Actions stays enabled by the owner's choice but nothing may rely on it. One branch and one PR per milestone.
 - Deploy only through Cloudflare Pages' Git integration. Batch pushes (its build quota is limited too).
 - Real data only. The globe data comes from `pipeline/build_frames.py` (pyGPlates, run offline, never in the browser). Commit its outputs in `public/frames/` (each file < 25 MiB). The web build is plain `npm run build`, no Python.
 - Read `docs/next-session.md` first; update it and `docs/HANDOVER.md` after every milestone.
