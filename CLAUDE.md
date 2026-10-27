@@ -1,13 +1,15 @@
-# CLAUDE.md (Vincent Wesley, cloud sessions)
+# CLAUDE.md (Earth Through Time)
 
-## First run (only while `vite-ts/`, `mv3-extension/` and `worker-proxy/` still exist at the repo root)
-This repo is a template of three starters. When I give you a project name and description, do this before anything else, without asking:
-1. Pick the starter that fits (vite-ts = web app, mv3-extension = Chrome extension, worker-proxy = API proxy Worker). Default to vite-ts.
-2. Move that starter's contents to the repo root, delete the other two starter folders and the monorepo README/CI, and keep `.claude/` and `.github/workflows/automerge.yml` (it merges `claude/*` PRs once CI passes; never delete it or rename the CI workflow, which must stay named `CI`).
-3. Merge the starter's CLAUDE.md into this file, then delete this whole "First run" section.
-4. Replace `{{PROJECT}}` and the `package.json` name/repository with the project name. Make `.github/workflows/ci.yml` run at the repo root (no `working-directory`), and add `.claude` to the ESLint ignores.
-5. Build the MVP from my description. If I gave no must-haves, keep it to the smallest useful version.
-6. Run typecheck + lint + test + build, update `docs/next-session.md`, commit, open a PR, and report in 2 lines.
+A three.js globe that rewinds the continents 750 Myr using the Merdith et al. (2021) EarthByte plate model, with a Singapore pin. Static site on Cloudflare Pages. Public repo.
+
+## Project rules (win over the house rules below where they conflict)
+- **Zero GitHub Actions.** The owner's Actions minutes are at 0. Never add a workflow, schedule or Dependabot version updates; never re-run or watch CI. Keep `.github/workflows/ci.yml` and `automerge.yml` as they are (unused). Verify locally, then merge your own PR with `gh api -X PUT repos/vincentwesley/earth-through-time/pulls/<n>/merge -f merge_method=squash`; Actions stays enabled by the owner's choice but nothing may rely on it. One branch and one PR per milestone.
+- Deploy only through Cloudflare Pages' Git integration. Batch pushes (its build quota is limited too).
+- Real data only. The globe data comes from `pipeline/build_frames.py` (pyGPlates, run offline, never in the browser). Commit its outputs in `public/frames/` (each file < 25 MiB). The web build is plain `npm run build`, no Python.
+- Read `docs/next-session.md` first; update it and `docs/HANDOVER.md` after every milestone.
+- Checks that must stay green: `npm run typecheck && npm run lint && npm test && npm run build && npm run test:e2e` (in cloud sessions prefix e2e with `PW_CHROMIUM=/opt/pw-browsers/chromium`).
+- Keep `public/_headers` strict: no inline scripts, no third-party hosts. The app calls only its own origin.
+- `data/` is gitignored by house rule, so generated data lives in `public/frames/` and the pipeline in `pipeline/`.
 
 ## Who
 Vincent Wesley (GitHub: vincentwesley).

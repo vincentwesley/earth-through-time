@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A 3D globe that rewinds the continents 750 million years using real EarthByte plate-tectonic reconstructions. Scrub to any era and follow Singapore's rocks.">
+  <meta name="color-scheme" content="dark light">
+  <title>Earth Through Time</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <header class="top">
+    <div>
+      <p class="hs-eyebrow">750 Ma → today</p>
+      <h1>Earth Through Time</h1>
+    </div>
+    <button id="theme" class="hs-btn hs-btn--ghost" type="button" aria-pressed="false">Light theme</button>
+  </header>
+  <main>
+    <section class="stage" aria-label="Globe">
+      <canvas id="globe" aria-label="3D globe of the reconstructed continents. Drag to turn, scroll or pinch to zoom."></canvas>
+      <span id="pin-label" class="pin-label" hidden>Singapore</span>
+      <p id="status" class="status" role="status">Loading the plate model…</p>
+    </section>
+
+    <section class="hs-card panel" aria-labelledby="h-time">
+      <h2 id="h-time" class="sr-only">Time</h2>
+      <div class="readout">
+        <output id="ma" class="ma" for="time">250 Ma</output>
+        <span id="period" class="period hs-chip">Triassic</span>
+      </div>
+      <label class="sr-only" for="time">Millions of years ago</label>
+      <input id="time" class="time" type="range" min="0" max="750" step="1" value="250">
+      <div class="scale" aria-hidden="true"><span>750 Ma</span><span>Today</span></div>
+      <div class="actions">
+        <button id="play" class="hs-btn" type="button" aria-pressed="false">Play</button>
+        <button id="focus" class="hs-btn hs-btn--ghost" type="button">Find Singapore</button>
+      </div>
+      <ul id="moments" class="moments" aria-label="Jump to"></ul>
+    </section>
+
+    <section class="hs-card sg" aria-labelledby="h-sg">
+      <h2 id="h-sg">Singapore's rocks</h2>
+      <dl class="stats">
+        <div><dt>Position</dt><dd id="sg-pos" class="mono">1.3°N 103.8°E</dd></div>
+        <div><dt>Latitude band</dt><dd id="sg-band">Tropics</dd></div>
+        <div><dt>From today's spot</dt><dd id="sg-dist" class="mono">0 km</dd></div>
+      </dl>
+      <p class="fine">The pin rides plate 64701 (East Malay Peninsula, east of the Bentong–Raub Suture) in the Merdith et al. (2021) model. The dashed line is its whole 750 Myr track.</p>
+      <p id="sg-note" class="fine note" hidden>Before 410 Ma the model has no separate block here yet: it carries this crust fixed to Australia (plate 801).</p>
+    </section>
+
+    <section class="hs-card about" aria-labelledby="h-about">
+      <h2 id="h-about">About the data</h2>
+      <p>The continents are a real plate-tectonic reconstruction, not an animation. Every coastline and block of continental crust is rotated by its plate's motion from the <a href="https://doi.org/10.1016/j.earscirev.2020.103477">Merdith et al. (2021)</a> 1 billion-year full-plate model by the EarthByte Group, computed ahead of time with <a href="https://www.gplates.org/">pyGPlates</a> at 1 Myr steps.</p>
+      <p>Darker green is continental crust; lighter green is the shape of today's land carried back in time. Old positions are uncertain, especially before about 400 Ma, and the frame is palaeomagnetic, so longitudes are less certain than latitudes. The lavender lines mark the equator, tropics and polar circles.</p>
+      <p class="fine">Not affiliated with or endorsed by EarthByte, the University of Sydney or GPlates. Data CC BY 4.0, see Credits in the <a href="https://github.com/vincentwesley/earth-through-time#credits-and-citations">README</a>.</p>
+    </section>
+  </main>
+  <footer>
+<section class="section span-12 creator" aria-labelledby="h-creator">
+  <div class="card">
+    <div class="card__head"><h2 id="h-creator">Credits</h2></div>
+    <div class="card__body creator__body">
+      <div class="creator__fx" aria-hidden="true">
+        <i style="--x:30%;--y:22%;--s:3px;--d:11.7s;--b:3.1s;--dx:-34px;--dy:-36px;--delay:-9.6s"></i>
+        <i style="--x:38%;--y:62%;--s:2px;--d:8.2s;--b:2.3s;--dx:24px;--dy:-18px;--delay:-0.3s"></i>
+        <i style="--x:47%;--y:18%;--s:4px;--d:8.5s;--b:2.8s;--dx:30px;--dy:9px;--delay:-0.5s"></i>
+        <i style="--x:55%;--y:70%;--s:4px;--d:6.7s;--b:2.7s;--dx:40px;--dy:-38px;--delay:-3.9s"></i>
+        <i style="--x:62%;--y:30%;--s:4px;--d:6.3s;--b:2.7s;--dx:31px;--dy:-28px;--delay:-1.8s"></i>
+        <i style="--x:70%;--y:55%;--s:3px;--d:9.2s;--b:3.5s;--dx:31px;--dy:-22px;--delay:-0.9s"></i>
+        <i style="--x:78%;--y:24%;--s:4px;--d:9.8s;--b:3.1s;--dx:30px;--dy:-37px;--delay:-5.5s"></i>
+        <i style="--x:86%;--y:64%;--s:4px;--d:7.2s;--b:3.8s;--dx:14px;--dy:-5px;--delay:-3.4s"></i>
+        <i style="--x:93%;--y:38%;--s:4px;--d:8.2s;--b:2.8s;--dx:-17px;--dy:-14px;--delay:-0.7s"></i>
+        <i style="--x:44%;--y:84%;--s:3px;--d:9.2s;--b:4.2s;--dx:17px;--dy:-9px;--delay:-5.6s"></i>
+        <i style="--x:66%;--y:86%;--s:2px;--d:6.7s;--b:3.2s;--dx:3px;--dy:-26px;--delay:-6.3s"></i>
+        <i style="--x:25%;--y:74%;--s:4px;--d:6.2s;--b:3.7s;--dx:31px;--dy:-5px;--delay:-2.1s"></i>
+        <i style="--x:6%;--y:30%;--s:3px;--d:9.6s;--b:3.5s;--dx:18px;--dy:-37px;--delay:-8.1s"></i>
+        <i style="--x:14%;--y:82%;--s:3px;--d:8.8s;--b:3.7s;--dx:-33px;--dy:-6px;--delay:-5.7s"></i>
+        <i style="--x:21%;--y:12%;--s:5px;--d:10.9s;--b:2.9s;--dx:9px;--dy:-1px;--delay:-0.2s"></i>
+        <i style="--x:52%;--y:44%;--s:4px;--d:8.1s;--b:3.6s;--dx:23px;--dy:-38px;--delay:-1.8s"></i>
+        <b class="spark" style="--x:34%;--y:30%;--t:3.2s"></b><b class="spark" style="--x:58%;--y:22%;--t:4.1s;--delay:-1.3s"></b><b class="spark spark--sm" style="--x:50%;--y:58%;--t:2.7s;--delay:-.8s"></b><b class="spark spark--sm" style="--x:9%;--y:16%;--t:3.6s;--delay:-2s"></b>
+      </div>
+      <div class="creator__art" aria-hidden="true">
+        <img src="creator.webp" alt="" width="456" height="613" loading="lazy" decoding="async">
+      </div>
+      <div class="creator__text">
+        <p class="creator__eyebrow">Made by</p>
+        <p class="creator__name"><span>Vin</span></p>
+        <p class="creator__blurb">Earth Through Time was designed and built by Vin. Find more of my work on my website, or say hi on Instagram and X.</p>
+        <ul class="creator__links">
+          <li><a href="https://vwesley.dev" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>
+            <span>vwesley.dev</span></a></li>
+          <li><a href="https://www.instagram.com/vinnql/" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1" class="fill"/></svg>
+            <span>@vinnql</span><span class="sr-only"> on Instagram</span></a></li>
+          <li><a href="https://x.com/Vin_Koe" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="fill" d="M17.8 3h3.1l-6.8 7.8L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.3-8.3L2 3h6.4l4.4 5.8L17.8 3zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5z"/></svg>
+            <span>@Vin_Koe</span><span class="sr-only"> on X (Twitter)</span></a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+  </footer>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
