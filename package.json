@@ -1,0 +1,43 @@
+{
+  "name": "earth-through-time",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A 3D globe that rewinds the continents 750 million years using EarthByte plate-tectonic reconstructions.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Vincent Wesley",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vincentwesley/earth-through-time.git"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "knip": "knip"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^24.19.2",
+    "@types/three": "^0.184.0",
+    "eslint": "^10.12.0",
+    "knip": "^6.41.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  },
+  "dependencies": {
+    "three": "^0.184.0"
+  },
+  "homepage": "https://github.com/vincentwesley/earth-through-time"
+}
