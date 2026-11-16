@@ -14,6 +14,8 @@
 ## Current state
 - Milestone 1 (MVP) merged to `main`.
 
+- Branch `vin-atelier-brand` (unpushed): draggable Vin's Atelier logo + studio credits in the credits sign-off (`src/brand/`, `e2e/logo.spec.ts`).
+
 ## Known gaps
 1. Owner: connect Cloudflare Pages (HANDOVER.md).
 2. Next milestone: plate boundaries layer (PLAN.md #2).

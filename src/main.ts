@@ -1,5 +1,6 @@
 import "./style.css";
 import "./credits/credits.js";
+import "./brand/logo-resize";
 import { applyTheme, nextTheme, type Theme } from "./theme";
 import { Rotations, decodeGeometry, distanceKm, toLatLon, clamp, type Manifest } from "./data/model";
 import { MOMENTS, describeMa, formatLatLon, formatMa, latitudeBand, periodAt } from "./data/timescale";

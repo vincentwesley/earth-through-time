@@ -40,6 +40,8 @@ Static site for Cloudflare Pages: build command `npm run build`, output director
 - **Network calls:** only to its own origin (the page, scripts, fonts and the `frames/` data files, about 5 MB). No analytics, no cookies, no third-party hosts. The CSP allows `'self'` only. The only thing stored is your theme choice, in `localStorage`.
 
 ## Credits and citations
+Designed and built by Vin, Vin's Atelier (https://vwesley.dev). Logo by @portus_workstation / @wason25_pz (Instagram); the logo is all rights reserved (see `NOTICE.md`), not covered by the MIT licence.
+
 **Plate model (data, CC BY 4.0).** Merdith, A.S., Williams, S.E., Collins, A.S., Tetley, M.G., Mulder, J.A., Blades, M.L., Young, A., Armistead, S.E., Cannon, J., Zahirovic, S., Müller, R.D. (2021). Extending full-plate tectonic models into deep time: Linking the Neoproterozoic and the Phanerozoic. *Earth-Science Reviews* 214, 103477. <https://doi.org/10.1016/j.earscirev.2020.103477>. Model files v1.2.4 from the EarthByte Group: <https://www.earthbyte.org/webdav/ftp/Data_Collections/Merdith_etal_2021_ESR/> (also Zenodo, <https://doi.org/10.5281/zenodo.13635864>). Changes made here: polygons simplified (~16 km), triangulated, and rotations sampled every 1 Myr; see `pipeline/`.
 
 The model compiles and builds on, and its readme asks users to cite: Domeier (2016, 2018); Merdith et al. (2017), *Gondwana Research* 50, 84–134; Young et al. (2019), *Geoscience Frontiers* 10(3), 989–1013; Matthews et al. (2016), *Global and Planetary Change* 146, 226–250; Tetley (2018), PhD thesis; Torsvik et al. (2019), *G-Cubed* 20(7), 3659–3689.

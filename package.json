@@ -5,7 +5,7 @@
   "description": "A 3D globe that rewinds the continents 750 million years using EarthByte plate-tectonic reconstructions.",
   "type": "module",
   "license": "MIT",
-  "author": "Vincent Wesley",
+  "author": "Vin, Vin's Atelier (https://vwesley.dev)",
   "repository": {
     "type": "git",
     "url": "https://github.com/vincentwesley/earth-through-time.git"
