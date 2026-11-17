@@ -19,3 +19,4 @@
 ## Known gaps
 1. Owner: connect Cloudflare Pages (HANDOVER.md).
 2. Next milestone: plate boundaries layer (PLAN.md #2).
+- CI: .github/workflows/ci.yml is now inlined (house reusable workflow is private); no dependabot.yml exists, stale PRs #1-3 target nonexistent dirs (2026-11-17).
