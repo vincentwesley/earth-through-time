@@ -22,3 +22,4 @@
 - CI: .github/workflows/ci.yml is now inlined (house reusable workflow is private); no dependabot.yml exists, stale PRs #1-3 target nonexistent dirs (2026-11-17).
 - 2026-11-17 hygiene sweep: qa-output/ gitignored, dependabot added.
 - 2026-11-17: logo spec waits for the --logo-x transition before measuring (15s polls).
+- 2026-11-18: re-copied kit tokens.css per UPGRADING.md (credits.css still older kit; needs markup change). e2e needs --timeout=150000 under load: software-GL axe/logo specs exceed 30s.
