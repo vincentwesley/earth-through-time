@@ -73,3 +73,39 @@ test("?b=1 opens with boundaries in the light theme, axe clean", async ({ page }
   const { violations } = await new AxeBuilder({ page }).analyze();
   expect(violations).toEqual([]);
 });
+
+test("pick a place and follow its rocks", async ({ page }) => {
+  await page.goto("/?ma=0");
+  await expect(page.locator("body")).toHaveAttribute("data-ready", "true", { timeout: 30_000 });
+  await page.getByLabel("Place").selectOption("tokyo");
+  await expect(page.getByRole("heading", { name: "Tokyo's rocks" })).toBeVisible();
+  await expect(page.locator("#sg-pos")).toHaveText("35.7°N 139.7°E");
+  expect(page.url()).toContain("place=tokyo");
+  await page.locator("#time").fill("200");
+  await expect(page.locator("#sg-dist")).not.toHaveText("0 km");
+});
+
+test("tap the globe at Today to drop a pin; other times show a hint", async ({ page }) => {
+  await page.goto("/?ma=0");
+  await expect(page.locator("body")).toHaveAttribute("data-ready", "true", { timeout: 30_000 });
+  const box = (await page.locator("#globe").boundingBox())!;
+  await page.mouse.click(box.x + box.width / 2 + 20, box.y + box.height / 2 + 20);
+  await expect(page.getByRole("heading", { name: "Your pin's rocks" })).toBeVisible();
+  expect(page.url()).toContain("pin=");
+  const { violations } = await new AxeBuilder({ page }).analyze();
+  expect(violations).toEqual([]);
+
+  await page.locator("#time").fill("250");
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(page.locator("#tap-hint")).toContainText("Go to Today");
+});
+
+test("?pin= restores a dropped pin in the light theme, axe clean", async ({ page }) => {
+  await page.goto("/?ma=100&pin=-30.00,-120.00");
+  await expect(page.locator("body")).toHaveAttribute("data-ready", "true", { timeout: 30_000 });
+  await page.getByRole("button", { name: "Light theme" }).click();
+  await expect(page.getByRole("heading", { name: "Your pin's rocks" })).toBeVisible();
+  await expect(page.locator("#sg-note")).toContainText("may not have existed yet");
+  const { violations } = await new AxeBuilder({ page }).analyze();
+  expect(violations).toEqual([]);
+});

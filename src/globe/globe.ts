@@ -1,9 +1,9 @@
 // three.js globe: ocean sphere, reconstructed land (one draw call per layer, rotated per plate
-// on the GPU), palaeo-latitude guides, and the Singapore pin with its full 750 Myr track.
+// on the GPU), palaeo-latitude guides, plate boundaries, and a pin with its full 750 Myr track.
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import type { Boundaries, Geometry, Manifest, Quat, Rotations, Vec3 } from "../data/model";
-import { boundaryFrameAt, boundaryRange, rotate, toXyz } from "../data/model";
+import type { Boundaries, Geometry, Manifest, Pin, Rotations, Vec3 } from "../data/model";
+import { boundaryFrameAt, boundaryRange, rotate, toLatLon, toXyz, trackOf } from "../data/model";
 
 export interface Palette {
   ocean: string;
@@ -116,6 +116,7 @@ export interface GlobeOptions {
   geometry: Geometry;
   rotations: Rotations;
   boundaries: Boundaries;
+  pin: Pin;
   reducedMotion: boolean;
 }
 
@@ -135,7 +136,11 @@ export class Globe {
   private pinRing: THREE.Mesh;
   private ma = 0;
   private flight: { from: THREE.Vector3; to: THREE.Vector3; t: number } | null = null;
-  private readonly sgHome: Vec3;
+  private pinData!: Pin;
+  private pinHome: Vec3 = [1, 0, 0];
+  private track: THREE.Line;
+  private ocean: THREE.Mesh;
+  private onTapCb?: (lat: number, lon: number) => void;
   private onFrame?: () => void;
   private boundaryLines: THREE.LineSegments[] = [];
 
@@ -165,7 +170,8 @@ export class Globe {
       fragmentShader: OCEAN_FRAG,
       uniforms: { uColor: { value: new THREE.Color() }, uRim: { value: new THREE.Color() } },
     });
-    this.scene.add(new THREE.Mesh(new THREE.SphereGeometry(1, 96, 64), this.oceanMat));
+    this.ocean = new THREE.Mesh(new THREE.SphereGeometry(1, 96, 64), this.oceanMat);
+    this.scene.add(this.ocean);
     this.glowMat = new THREE.ShaderMaterial({
       vertexShader: OCEAN_VERT,
       fragmentShader: GLOW_FRAG,
@@ -227,13 +233,9 @@ export class Globe {
       this.scene.add(new THREE.Line(g, lat === 0 ? this.guideMat : this.guideMat.clone()));
     }
 
-    // Singapore: the track its crust takes from 750 Ma to today, and the pin itself
-    const s = manifest.singapore;
-    this.sgHome = toXyz(s.lat, s.lon);
-    const trackPts = s.path.map(([la, lo]) => toWorld(toXyz(la, lo), 1.007));
-    const track = new THREE.Line(new THREE.BufferGeometry().setFromPoints(trackPts), this.trackMat);
-    track.computeLineDistances();
-    this.scene.add(track);
+    // the pin's track: where its crust sits every 5 Myr from today back to 750 Ma (set in setPin)
+    this.track = new THREE.Line(new THREE.BufferGeometry(), this.trackMat);
+    this.scene.add(this.track);
 
     this.pin = new THREE.Group();
     const dot = new THREE.Mesh(new THREE.SphereGeometry(0.018, 16, 12), new THREE.MeshBasicMaterial());
@@ -245,7 +247,9 @@ export class Globe {
     this.scene.add(this.pin);
 
     this.applyPalette(PALETTES.dark);
+    this.setPin(o.pin);
     this.setTime(0);
+    this.listenForTaps(canvas);
     this.resize();
     window.addEventListener("resize", () => this.resize());
     this.controls.addEventListener("start", () => (this.flight = null));
@@ -285,10 +289,41 @@ export class Globe {
     for (const c of this.pin.children) ((c as THREE.Mesh).material as THREE.MeshBasicMaterial).color.set(p.pin);
   }
 
-  /** Where Singapore's crust sits at `ma`, as a unit vector in the Earth-centred frame. */
-  singaporeAt(ma: number): Vec3 {
-    const q: Quat = this.o.rotations.at(this.o.manifest.singapore.plateIndex, ma);
-    return rotate(q, this.sgHome);
+  /** Where the pin's crust sits at `ma`, as a unit vector in the Earth-centred frame. */
+  pinAt(ma: number): Vec3 {
+    return rotate(this.o.rotations.at(this.pinData.plateIndex, ma), this.pinHome);
+  }
+
+  setPin(pin: Pin): void {
+    this.pinData = pin;
+    this.pinHome = toXyz(pin.lat, pin.lon);
+    const pts = trackOf(this.o.rotations, pin, this.o.manifest.oldestMa, 5).map(([la, lo]) => toWorld(toXyz(la, lo), 1.007));
+    this.track.geometry.dispose();
+    this.track.geometry = new THREE.BufferGeometry().setFromPoints(pts);
+    this.track.computeLineDistances();
+    this.setTime(this.ma);
+  }
+
+  /** Called with the Earth-centred lat/lon of a tap (not a drag) on the globe. */
+  onTap(cb: (lat: number, lon: number) => void): void {
+    this.onTapCb = cb;
+  }
+
+  private listenForTaps(canvas: HTMLCanvasElement): void {
+    let down: { x: number; y: number } | null = null;
+    const ray = new THREE.Raycaster();
+    canvas.addEventListener("pointerdown", (e) => (down = { x: e.clientX, y: e.clientY }));
+    canvas.addEventListener("pointerup", (e) => {
+      if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) return;
+      down = null;
+      const r = canvas.getBoundingClientRect();
+      ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), this.camera);
+      const hit = ray.intersectObject(this.ocean)[0];
+      if (!hit) return;
+      const w = hit.point; // three.js y-up back to Earth-centred z-up (inverse of toWorld)
+      const [lat, lon] = toLatLon([w.x, -w.z, w.y]);
+      this.onTapCb?.(lat, lon);
+    });
   }
 
   setTime(ma: number): void {
@@ -296,7 +331,7 @@ export class Globe {
     this.o.rotations.fill(this.rotData, ma);
     this.rotTex.needsUpdate = true;
     for (const m of this.land) m.uniforms.uMa.value = ma;
-    const p = toWorld(this.singaporeAt(ma), 1.008);
+    const p = toWorld(this.pinAt(ma), 1.008);
     this.pin.position.copy(p);
     this.pin.lookAt(p.clone().multiplyScalar(2));
     const meta = this.o.manifest.boundaries;

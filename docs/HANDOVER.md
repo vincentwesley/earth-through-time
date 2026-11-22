@@ -20,6 +20,11 @@ Milestone 1 (MVP) is built and verified locally: typecheck, lint, 11 unit tests,
 - `pipeline/build_frames.py` resolves topologies every 5 Myr into `public/frames/boundaries.bin` (3.6 MB). `geometry.bin` and `rotations.bin` regenerate byte-identical.
 - A "Plate boundaries" toggle in the time panel with a 4-type legend, saved as `?b=1`. Verified: typecheck, lint, 17 unit tests, 40 e2e tests (`--timeout=150000`), build, and the production-CSP check.
 
+## Milestone 3: pins anywhere (2026-11-22)
+- `lookup.bin` (0.25° static-polygon grid, 229 KB) plus rotations for every static-polygon plate. A place picker (25 cities), tap at Today to drop a pin, a generic pin card and note, and `?place=` / `?pin=`.
+- Boundary segments are now sorted in the pipeline: pyGPlates returned them in a different order between runs, and output is byte-identical again.
+- Verified: typecheck, lint, 23 unit tests, 46 e2e tests, build, and the production-CSP check.
+
 ## Known issues
 - In the dark theme, today's terrane outlines (from the model's coastline polygons) draw internal block boundaries too. That's real model detail, but it's busy at today's scale. Could fade outlines by zoom.
 - Fixed-step slerp between 1 Myr samples (error well under the model's own uncertainty).

@@ -75,3 +75,12 @@ main {
 .sw--ridge { background: var(--b-ridge); }
 .sw--tf { background: var(--b-tf); }
 .sw--other { background: var(--b-other); }
+
+.pick { display: flex; align-items: center; gap: 0.75rem; margin: 0.25rem 0 0.25rem; }
+.pick label { color: var(--fg-muted); font: 400 0.75rem var(--font-label); letter-spacing: 0.08em; text-transform: uppercase; }
+.place {
+  flex: 1; min-height: 44px; padding: 0.4rem 0.6rem;
+  font: 500 1rem var(--font-body); color: var(--fg); background: var(--bg);
+  border: 0; border-radius: 0; box-shadow: var(--pix); cursor: pointer;
+}
+#tap-hint { margin: 0 0 0.75rem; }

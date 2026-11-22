@@ -38,6 +38,7 @@ export interface Manifest {
   rotations: { file: string; bytes: number; sha256: string; type: "<i2"; layout: "frame,plate,xyzw" };
   layers: Layer[];
   boundaries: BoundaryMeta;
+  lookup: LookupMeta;
   singapore: {
     lat: number;
     lon: number;
@@ -217,4 +218,64 @@ export function distanceKm(a: [number, number], b: [number, number]): number {
   const dLon = (b[1] - a[1]) * DEG;
   const h = Math.sin(dLat / 2) ** 2 + Math.cos(a[0] * DEG) * Math.cos(b[0] * DEG) * Math.sin(dLon / 2) ** 2;
   return 2 * EARTH_RADIUS_KM * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+export interface LookupMeta {
+  file: string;
+  bytes: number;
+  sha256: string;
+  deg: number;
+  rows: number;
+  cols: number;
+  /** Entry 0 is "no polygon"; others are [plate index, polygon begin Ma (noBegin = always)]. */
+  entries: [number, number][];
+}
+
+/** Present-day static polygons rasterised to a lat/lon grid: which plate a spot rides on. */
+export class PlateLookup {
+  private readonly grid: Uint16Array;
+
+  constructor(
+    private readonly meta: LookupMeta,
+    buf: ArrayBuffer,
+  ) {
+    if (buf.byteLength !== meta.bytes) throw new Error("lookup.bin: size does not match manifest");
+    const rle = new Uint16Array(buf);
+    this.grid = new Uint16Array(meta.rows * meta.cols);
+    let at = 0;
+    for (let i = 0; i < rle.length; i += 2) {
+      this.grid.fill(rle[i + 1], at, at + rle[i]);
+      at += rle[i];
+    }
+    if (at !== this.grid.length) throw new Error("lookup.bin: run lengths do not cover the grid");
+  }
+
+  at(lat: number, lon: number): { plateIndex: number; beginMa: number } | null {
+    const { deg, rows, cols } = this.meta;
+    const r = clamp(Math.floor((90 - lat) / deg), 0, rows - 1);
+    const lo = ((((lon + 180) % 360) + 360) % 360) - 180;
+    const c = clamp(Math.floor((lo + 180) / deg), 0, cols - 1);
+    const e = this.grid[r * cols + c];
+    if (e === 0) return null;
+    const [plateIndex, beginMa] = this.meta.entries[e];
+    return { plateIndex, beginMa };
+  }
+}
+
+/** A place whose crust the globe follows through time. */
+export interface Pin {
+  name: string;
+  lat: number;
+  lon: number;
+  plateIndex: number;
+  /** Age (Ma) at which the model's polygon for this spot begins; noBegin = before 750 Ma. */
+  beginMa: number;
+}
+
+/** [lat, lon] of the pin's crust every stepMa from today back to oldestMa. */
+export function trackOf(rot: Rotations, pin: Pin, oldestMa: number, stepMa: number): [number, number][] {
+  const home = toXyz(pin.lat, pin.lon);
+  const out: [number, number][] = [];
+  for (let ma = 0; ma <= oldestMa; ma += stepMa) out.push(toLatLon(rotate(rot.at(pin.plateIndex, ma), home)));
+  return out;
 }

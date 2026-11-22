@@ -8,6 +8,8 @@ compact binaries to public/frames/:
                  and its valid-time window.
   rotations.bin  one unit quaternion per plate per 1 Myr step (750 Ma -> 0),
                  straight from the model's rotation file via pyGPlates.
+  lookup.bin     present-day plate lookup: a 0.25 deg grid of the model's static polygons,
+                 so the browser can tell which plate any tapped spot rides on.
   boundaries.bin resolved plate boundaries every 5 Myr (subduction zones, ridges,
                  transforms, other), as line segments grouped by frame and type.
   manifest.json  section offsets, times, plate list, model citation, hashes.
@@ -55,6 +57,7 @@ TOPOLOGY_FILES = [  # the plate-boundary files the model's .gproj loads
     "1000-410-Transforms_Merdith_et_al.gpml",
     "TopologyBuildingBlocks_Merdith_et_al.gpml",
 ]
+LOOKUP_DEG = 0.25
 BOUNDARY_STEP_MA = 5
 # Order matters: the client draws one line set per type in this order.
 BOUNDARY_TYPES = ["SubductionZone", "MidOceanRidge", "Transform", "other"]
@@ -331,6 +334,10 @@ def build(model: Path, verify: bool) -> dict:
     plate_index(sg_pid)
     sg_begin, _ = valid_window(sg_feature)
 
+    # Every static-polygon plate needs rotations too, so a pin can be dropped anywhere.
+    # Appended after the layer plates, so existing plate indices (and geometry.bin) don't change.
+    lookup_bytes, lookup_meta = build_lookup(model, rot_model, plate_index)
+
     pids = list(plates.keys())
     times = list(range(0, OLDEST_MA + 1, STEP_MA))
     q = np.zeros((len(times), len(pids), 4))
@@ -381,6 +388,7 @@ def build(model: Path, verify: bool) -> dict:
 
     bnd_bytes, bnd_meta = build_boundaries(model, rot_model)
     (OUT / "boundaries.bin").write_bytes(bnd_bytes)
+    (OUT / "lookup.bin").write_bytes(lookup_bytes)
 
     manifest = {
         "version": 1,
@@ -398,6 +406,7 @@ def build(model: Path, verify: bool) -> dict:
         "rotations": {"file": "rotations.bin", "bytes": len(rot_bytes), "sha256": hashlib.sha256(rot_bytes).hexdigest(), "type": "<i2", "layout": "frame,plate,xyzw"},
         "layers": layers_meta,
         "boundaries": bnd_meta,
+        "lookup": lookup_meta,
         "singapore": {
             "lat": SINGAPORE[0],
             "lon": SINGAPORE[1],
@@ -410,11 +419,73 @@ def build(model: Path, verify: bool) -> dict:
         },
     }
     (OUT / "manifest.json").write_text(json.dumps(manifest, separators=(",", ":")) + "\n")
-    for f in ("geometry.bin", "rotations.bin", "boundaries.bin", "manifest.json"):
+    for f in ("geometry.bin", "rotations.bin", "boundaries.bin", "lookup.bin", "manifest.json"):
         size = (OUT / f).stat().st_size
         print(f"{f}: {size / 1024:.0f} KiB")
         assert size < 25 * 1024 * 1024, f"{f} over 25 MiB"
     return manifest
+
+
+def build_lookup(model: Path, rot_model, plate_index) -> tuple[bytes, dict]:
+    """Rasterise the present-day static polygons: each 0.25 deg cell centre stores an entry
+    index (0 = no polygon) into a table of (plate index, polygon begin Ma). Run-length encoded."""
+    static = pygplates.FeatureCollection(str(model / STATIC_POLYGONS))
+    partitioner = pygplates.PlatePartitioner(static, rot_model, 0.0)
+    rows, cols = int(180 / LOOKUP_DEG), int(360 / LOOKUP_DEG)
+    entries: dict[tuple[int, int], int] = {}
+    table: list[list[int]] = [[0, 0]]  # index 0: no polygon
+    grid = np.zeros(rows * cols, dtype=np.uint16)
+
+    def entry_of(feature) -> int:
+        key = (plate_index(feature.get_reconstruction_plate_id()), valid_window(feature)[0])
+        if key not in entries:
+            entries[key] = len(table)
+            table.append(list(key))
+        return entries[key]
+
+    for r in range(rows):
+        lat = 90 - (r + 0.5) * LOOKUP_DEG
+        for c in range(cols):
+            hit = partitioner.partition_point(pygplates.PointOnSphere(lat, -180 + (c + 0.5) * LOOKUP_DEG))
+            if hit is not None:
+                grid[r * cols + c] = entry_of(hit.get_feature())
+    assert len(table) < 0xFFFF
+
+    # spot-check cell lookups against full-precision partitioning at random points
+    rng = np.random.default_rng(7)
+    miss = 0
+    for _ in range(400):
+        lat, lon = float(rng.uniform(-89.9, 89.9)), float(rng.uniform(-180, 180))
+        r = min(rows - 1, int((90 - lat) / LOOKUP_DEG))
+        c = min(cols - 1, int((lon + 180) / LOOKUP_DEG))
+        hit = partitioner.partition_point(pygplates.PointOnSphere(lat, lon))
+        want = entry_of(hit.get_feature()) if hit is not None else 0
+        miss += int(grid[r * cols + c] != want)
+    print(f"lookup: {len(table) - 1} polygon entries, {miss}/400 random points differ at 0.25 deg (polygon edges)")
+    assert miss <= 12, "lookup grid disagrees with pyGPlates too often"
+
+    runs: list[int] = []
+    i = 0
+    while i < grid.size:
+        v = int(grid[i])
+        j = i
+        while j < grid.size and grid[j] == v and j - i < 0xFFFF:
+            j += 1
+        runs += [j - i, v]
+        i = j
+    rle = np.array(runs, dtype="<u2")
+    blob = rle.tobytes()
+    meta = {
+        "file": "lookup.bin",
+        "bytes": len(blob),
+        "sha256": hashlib.sha256(blob).hexdigest(),
+        "deg": LOOKUP_DEG,
+        "rows": rows,
+        "cols": cols,
+        "layout": "Uint16 (run length, entry) pairs over rows north->south, cols west->east; entry 0 = none",
+        "entries": table,
+    }
+    return blob, meta
 
 
 def build_boundaries(model: Path, rot_model) -> tuple[bytes, dict]:
@@ -442,6 +513,8 @@ def build_boundaries(model: Path, rot_model) -> tuple[bytes, dict]:
                 per_type[kind].append(pairs)
         for k in BOUNDARY_TYPES:
             if per_type[k]:
+                # pyGPlates doesn't return sections in a stable order; sort so output is byte-identical
+                per_type[k].sort(key=lambda a: (len(a), *np.round(a[0], 9), *np.round(a[-1], 9)))
                 arr = np.concatenate(per_type[k])
                 segs.append(arr)
                 n += len(arr)

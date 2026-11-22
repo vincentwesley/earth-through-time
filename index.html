@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="A 3D globe that rewinds the continents 750 million years using real EarthByte plate-tectonic reconstructions. Scrub to any era and follow Singapore's rocks.">
+  <meta name="description" content="A 3D globe that rewinds the continents 750 million years using real EarthByte plate-tectonic reconstructions. Scrub to any era and follow where any place's rocks sat, starting with Singapore.">
   <meta name="color-scheme" content="dark light">
   <title>Earth Through Time</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -37,7 +37,7 @@
       <div class="scale" aria-hidden="true"><span>750 Ma</span><span>Today</span></div>
       <div class="actions">
         <button id="play" class="hs-btn" type="button" aria-pressed="false">Play</button>
-        <button id="focus" class="hs-btn hs-btn--ghost" type="button">Find Singapore</button>
+        <button id="focus" class="hs-btn hs-btn--ghost" type="button">Find pin</button>
       </div>
       <ul id="moments" class="moments" aria-label="Jump to"></ul>
       <div class="bounds">
@@ -56,12 +56,17 @@
 
     <section class="hs-card sg" aria-labelledby="h-sg">
       <h2 id="h-sg">Singapore's rocks</h2>
+      <div class="pick">
+        <label for="place">Place</label>
+        <select id="place" class="place"></select>
+      </div>
+      <p id="tap-hint" class="fine" role="status">Or tap the globe at Today to drop a pin anywhere.</p>
       <dl class="stats">
         <div><dt>Position</dt><dd id="sg-pos" class="mono">1.3°N 103.8°E</dd></div>
         <div><dt>Latitude band</dt><dd id="sg-band">Tropics</dd></div>
         <div><dt>From today's spot</dt><dd id="sg-dist" class="mono">0 km</dd></div>
       </dl>
-      <p class="fine">The pin rides plate 64701 (East Malay Peninsula, east of the Bentong–Raub Suture) in the Merdith et al. (2021) model. The dashed line is its whole 750 Myr track.</p>
+      <p id="sg-desc" class="fine">The pin rides plate 64701 (East Malay Peninsula, east of the Bentong–Raub Suture) in the Merdith et al. (2021) model. The dashed line is its whole 750 Myr track.</p>
       <p id="sg-note" class="fine note" hidden>Before 410 Ma the model has no separate block here yet: it carries this crust fixed to Australia (plate 801).</p>
     </section>
 
