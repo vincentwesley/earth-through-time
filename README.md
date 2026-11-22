@@ -12,12 +12,15 @@ The motion is a **real plate-tectonic reconstruction**, not an artist's animatio
 
 ![Plate boundaries at 600 Ma](docs/screenshots/boundaries-600ma.png)
 
+![Tokyo's rocks at 250 Ma](docs/screenshots/tokyo-250ma.png)
+
 ## Using it
 - **Drag** to turn the globe, **scroll or pinch** to zoom.
 - Move the **time slider** (left is 750 Ma, right is today), press **Play**, or jump with the chips (Rodinia, Gondwana, Pangaea, today).
-- **Find Singapore** turns the globe to the pin. The panel shows its palaeo-position, latitude band and distance from where it is today. The dashed line is its whole 750 Myr track.
+- **Pick a place** (about 25 cities) or **tap the globe at Today** to drop your own pin anywhere. The model's static polygons say which plate that spot rides on.
+- **Find pin** turns the globe to the pin. The panel shows its palaeo-position, latitude band and distance from where it is today. The dashed line is its whole 750 Myr track.
 - **Plate boundaries** shows the model's subduction zones, mid-ocean ridges, transforms and other boundaries, resolved every 5 Myr (the lines snap to the nearest step).
-- Share a moment: the address updates to `?ma=250` (and `&b=1` with boundaries on) and opens there.
+- Share a moment: the address updates to `?ma=250` (plus `&b=1` for boundaries, `&place=tokyo` or `&pin=lat,lon` for the pin) and opens there.
 - Dark theme by default; light theme from the button. Respects *reduce motion*.
 
 **What you see:** darker green is continental crust; lighter green is today's land shapes carried back in time; lavender lines are the equator, tropics and polar circles. The model uses a palaeomagnetic reference frame, so ancient latitudes are better constrained than longitudes, and everything before about 400 Ma carries more uncertainty.
@@ -40,7 +43,7 @@ Static site for Cloudflare Pages: build command `npm run build`, output director
 
 ## Secrets and network calls
 - **Secrets:** none.
-- **Network calls:** only to its own origin (the page, scripts, fonts and the `frames/` data files, about 9 MB). No analytics, no cookies, no third-party hosts. The CSP allows `'self'` only. The only thing stored is your theme choice, in `localStorage`.
+- **Network calls:** only to its own origin (the page, scripts, fonts and the `frames/` data files, about 9.5 MB). No analytics, no cookies, no third-party hosts. The CSP allows `'self'` only. The only thing stored is your theme choice, in `localStorage`.
 
 ## Credits and citations
 Designed and built by Vin, Vin's Atelier (https://vwesley.dev). Logo by @portus_workstation / @wason25_pz (Instagram); the logo is all rights reserved (see `NOTICE.md`), not covered by the MIT licence.

@@ -2,9 +2,10 @@ import "./style.css";
 import "./credits/credits.js";
 import "./brand/logo-resize";
 import { applyTheme, nextTheme, type Theme } from "./theme";
-import { Rotations, decodeBoundaries, decodeGeometry, distanceKm, toLatLon, clamp, type Manifest } from "./data/model";
+import { PlateLookup, Rotations, decodeBoundaries, decodeGeometry, distanceKm, toLatLon, clamp, type Manifest, type Pin } from "./data/model";
+import { PLACES, placeBySlug } from "./data/places";
 import { MOMENTS, describeMa, formatLatLon, formatMa, latitudeBand, periodAt } from "./data/timescale";
-import { MAX_MA, readBoundaries, readMa, writeBoundaries, writeMa } from "./url";
+import { MAX_MA, readBoundaries, readMa, readPin, readPlace, writeBoundaries, writeMa, writePin, writePlace } from "./url";
 
 const KEY = "theme";
 const store = {
@@ -37,6 +38,13 @@ const sgLat = $<HTMLElement>("#sg-pos");
 const sgBand = $<HTMLElement>("#sg-band");
 const sgDist = $<HTMLElement>("#sg-dist");
 const sgNote = $<HTMLElement>("#sg-note");
+const sgTitle = $<HTMLElement>("#h-sg");
+const sgDesc = $<HTMLElement>("#sg-desc");
+const placeSel = $<HTMLSelectElement>("#place");
+const tapHint = $<HTMLElement>("#tap-hint");
+const TAP_HINT = tapHint.textContent ?? "";
+const SG_DESC = sgDesc.textContent ?? "";
+const SG_NOTE = sgNote.textContent ?? "";
 const label = $<HTMLElement>("#pin-label");
 const boundsBtn = $<HTMLButtonElement>("#bounds");
 const boundsKey = $<HTMLElement>("#bounds-key");
@@ -46,6 +54,8 @@ let globe: GlobeT | null = null;
 let palettes: typeof import("./globe/globe").PALETTES | null = null;
 let manifest: Manifest | null = null;
 let rotations: Rotations | null = null;
+let lookup: PlateLookup | null = null;
+let pin: Pin | null = null;
 
 function syncTheme(t: Theme): void {
   applyTheme(t);
@@ -70,12 +80,12 @@ function show(ma: number): void {
   periodOut.style.setProperty("--period", p.color);
   if (!manifest || !globe) return;
   globe.setTime(ma);
-  const s = manifest.singapore;
-  const [lat, lon] = toLatLon(globe.singaporeAt(ma));
+  if (!pin) return;
+  const [lat, lon] = toLatLon(globe.pinAt(ma));
   sgLat.textContent = formatLatLon(lat, lon);
   sgBand.textContent = latitudeBand(lat);
-  sgDist.textContent = `${Math.round(distanceKm([lat, lon], [s.lat, s.lon])).toLocaleString("en")} km`;
-  sgNote.hidden = ma <= s.polygonBeginMa;
+  sgDist.textContent = `${Math.round(distanceKm([lat, lon], [pin.lat, pin.lon])).toLocaleString("en")} km`;
+  sgNote.hidden = pin.beginMa === manifest.noBegin || ma <= pin.beginMa;
 }
 
 let playing = false;
@@ -140,6 +150,46 @@ boundsBtn.addEventListener("click", () => {
   writeBoundaries(boundsOn);
 });
 
+for (const p of PLACES) placeSel.add(new Option(p.name, p.slug));
+
+/** Point the card, label and globe at a pin. */
+function usePin(next: Pin, slug: string | null): void {
+  if (!manifest) return;
+  pin = next;
+  const isSg = slug === "singapore";
+  placeSel.value = slug ?? "";
+  if (!slug) {
+    if (!placeSel.querySelector('option[value=""]')) placeSel.add(new Option("Your pin", ""), 0);
+    placeSel.value = "";
+  } else placeSel.querySelector('option[value=""]')?.remove();
+  sgTitle.textContent = slug ? `${next.name}'s rocks` : "Your pin's rocks";
+  label.textContent = next.name;
+  const plateId = manifest.plates[next.plateIndex];
+  sgDesc.textContent = isSg
+    ? SG_DESC
+    : `The pin rides plate ${plateId} in the Merdith et al. (2021) model. The dashed line is its whole 750 Myr track.`;
+  sgNote.textContent = isSg
+    ? SG_NOTE
+    : `The model's polygon for this spot begins at ${next.beginMa} Ma. Earlier positions follow plate ${plateId}'s rotation, so this crust may not have existed yet.`;
+  globe?.setPin(next);
+  show(Number(slider.value));
+}
+
+/** Build a pin from present-day coordinates, or null where the model has no plate. */
+function pinFor(name: string, lat: number, lon: number): Pin | null {
+  const hit = lookup?.at(lat, lon);
+  return hit ? { name, lat, lon, ...hit } : null;
+}
+
+placeSel.addEventListener("change", () => {
+  const p = placeBySlug(placeSel.value);
+  const next = p && pinFor(p.name, p.lat, p.lon);
+  if (!p || !next) return;
+  usePin(next, p.slug);
+  writePlace(p.slug);
+  globe?.focusPin();
+});
+
 show(readMa(location.search) ?? 250);
 setBounds(readBoundaries(location.search));
 
@@ -151,13 +201,24 @@ async function load(): Promise<void> {
     return res;
   };
   manifest = (await (await get("manifest.json")).json()) as Manifest;
-  const [g, r, b, mod] = await Promise.all([
+  const [g, r, b, l, mod] = await Promise.all([
     get(manifest.geometry.file).then((x) => x.arrayBuffer()),
     get(manifest.rotations.file).then((x) => x.arrayBuffer()),
     get(manifest.boundaries.file).then((x) => x.arrayBuffer()),
+    get(manifest.lookup.file).then((x) => x.arrayBuffer()),
     import("./globe/globe"),
   ]);
   rotations = new Rotations(manifest, new Int16Array(r));
+  lookup = new PlateLookup(manifest.lookup, l);
+  const s = manifest.singapore;
+  const singapore: Pin = { name: "Singapore", lat: s.lat, lon: s.lon, plateIndex: s.plateIndex, beginMa: s.polygonBeginMa };
+  const fromUrl = readPin(location.search);
+  const place = placeBySlug(readPlace(location.search));
+  let first: [Pin, string | null] = [singapore, "singapore"];
+  const urlPin = fromUrl && pinFor("Your pin", fromUrl.lat, fromUrl.lon);
+  const placePin = place && place.slug !== "singapore" && pinFor(place.name, place.lat, place.lon);
+  if (urlPin) first = [urlPin, null];
+  else if (placePin && place) first = [placePin, place.slug];
   palettes = mod.PALETTES;
   const canvas = $<HTMLCanvasElement>("#globe");
   globe = new mod.Globe({
@@ -166,9 +227,25 @@ async function load(): Promise<void> {
     geometry: decodeGeometry(manifest, g),
     rotations,
     boundaries: decodeBoundaries(manifest, b),
+    pin: first[0],
     reducedMotion,
   });
   globe.setBoundariesVisible(boundsOn);
+  usePin(...first);
+  globe.onTap((lat, lon) => {
+    if ((globe?.time ?? 0) > 0.5) {
+      tapHint.textContent = "Go to Today to drop a pin: past positions can't be traced back to one plate.";
+      return;
+    }
+    const next = pinFor("Your pin", lat, lon);
+    if (!next) {
+      tapHint.textContent = "No plate data here in the model.";
+      return;
+    }
+    tapHint.textContent = TAP_HINT;
+    usePin(next, null);
+    writePin(lat, lon);
+  });
   globe.applyPalette(palettes[store.get()]);
   globe.onRender(() => {
     const p = globe!.pinScreen();
