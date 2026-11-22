@@ -13,12 +13,14 @@
 
 ## Current state
 - Milestone 1 (MVP) merged to `main`.
+- Milestone 2 (plate boundaries) done 2026-11-22 on `claude/eloquent-wright-4gpyps`: `boundaries.bin`, toggle + legend, `?b=1`.
 
 - Branch `vin-atelier-brand` (unpushed): draggable Vin's Atelier logo + studio credits in the credits sign-off (`src/brand/`, `e2e/logo.spec.ts`).
 
 ## Known gaps
 1. Owner: connect Cloudflare Pages (HANDOVER.md).
-2. Next milestone: plate boundaries layer (PLAN.md #2).
+2. Next milestone: more pins / tap-to-drop (PLAN.md #3).
+- Rule conflict for the owner: CLAUDE.md says zero Actions / no Dependabot, but main has `dependabot.yml` and an inlined CI that runs. Not touched; owner to decide.
 - CI: .github/workflows/ci.yml is now inlined (house reusable workflow is private); no dependabot.yml exists, stale PRs #1-3 target nonexistent dirs (2026-11-17).
 - 2026-11-17 hygiene sweep: qa-output/ gitignored, dependabot added.
 - 2026-11-17: logo spec waits for the --logo-x transition before measuring (15s polls).

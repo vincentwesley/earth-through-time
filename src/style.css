@@ -62,3 +62,16 @@ main {
 @media (prefers-reduced-motion: no-preference) {
   .period { transition: box-shadow 0.3s var(--fx-ease); }
 }
+
+.bounds { display: grid; gap: 0.6rem; margin-top: 0.25rem; }
+.bounds > .hs-chip { justify-self: start; min-height: 36px; }
+.bounds > .hs-chip[aria-pressed="true"] { color: var(--accent-fg); background: var(--accent); }
+:root { --b-sub: #ff8f6b; --b-ridge: #4fe0a0; --b-tf: #c4b5ff; --b-other: #8a9a82; }
+:root[data-theme="light"] { --b-sub: #c2410c; --b-ridge: #0f7a4a; --b-tf: #5b3fb8; --b-other: #5f6f58; }
+.legend { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.35rem 1rem; font-size: 0.85rem; }
+.legend li { display: flex; align-items: center; gap: 0.5rem; }
+.sw { display: inline-block; width: 1.1rem; height: 3px; flex: none; }
+.sw--sub { background: var(--b-sub); }
+.sw--ridge { background: var(--b-ridge); }
+.sw--tf { background: var(--b-tf); }
+.sw--other { background: var(--b-other); }

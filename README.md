@@ -10,11 +10,14 @@ The motion is a **real plate-tectonic reconstruction**, not an artist's animatio
 |---|---|
 | ![Light theme at 200 Ma](docs/screenshots/light-200ma.png) | ![Phone layout at 750 Ma](docs/screenshots/mobile-750ma.png) |
 
+![Plate boundaries at 600 Ma](docs/screenshots/boundaries-600ma.png)
+
 ## Using it
 - **Drag** to turn the globe, **scroll or pinch** to zoom.
 - Move the **time slider** (left is 750 Ma, right is today), press **Play**, or jump with the chips (Rodinia, Gondwana, Pangaea, today).
 - **Find Singapore** turns the globe to the pin. The panel shows its palaeo-position, latitude band and distance from where it is today. The dashed line is its whole 750 Myr track.
-- Share a moment: the address updates to `?ma=250` and opens there.
+- **Plate boundaries** shows the model's subduction zones, mid-ocean ridges, transforms and other boundaries, resolved every 5 Myr (the lines snap to the nearest step).
+- Share a moment: the address updates to `?ma=250` (and `&b=1` with boundaries on) and opens there.
 - Dark theme by default; light theme from the button. Respects *reduce motion*.
 
 **What you see:** darker green is continental crust; lighter green is today's land shapes carried back in time; lavender lines are the equator, tropics and polar circles. The model uses a palaeomagnetic reference frame, so ancient latitudes are better constrained than longitudes, and everything before about 400 Ma carries more uncertainty.
@@ -37,12 +40,12 @@ Static site for Cloudflare Pages: build command `npm run build`, output director
 
 ## Secrets and network calls
 - **Secrets:** none.
-- **Network calls:** only to its own origin (the page, scripts, fonts and the `frames/` data files, about 5 MB). No analytics, no cookies, no third-party hosts. The CSP allows `'self'` only. The only thing stored is your theme choice, in `localStorage`.
+- **Network calls:** only to its own origin (the page, scripts, fonts and the `frames/` data files, about 9 MB). No analytics, no cookies, no third-party hosts. The CSP allows `'self'` only. The only thing stored is your theme choice, in `localStorage`.
 
 ## Credits and citations
 Designed and built by Vin, Vin's Atelier (https://vwesley.dev). Logo by @portus_workstation / @wason25_pz (Instagram); the logo is all rights reserved (see `NOTICE.md`), not covered by the MIT licence.
 
-**Plate model (data, CC BY 4.0).** Merdith, A.S., Williams, S.E., Collins, A.S., Tetley, M.G., Mulder, J.A., Blades, M.L., Young, A., Armistead, S.E., Cannon, J., Zahirovic, S., Müller, R.D. (2021). Extending full-plate tectonic models into deep time: Linking the Neoproterozoic and the Phanerozoic. *Earth-Science Reviews* 214, 103477. <https://doi.org/10.1016/j.earscirev.2020.103477>. Model files v1.2.4 from the EarthByte Group: <https://www.earthbyte.org/webdav/ftp/Data_Collections/Merdith_etal_2021_ESR/> (also Zenodo, <https://doi.org/10.5281/zenodo.13635864>). Changes made here: polygons simplified (~16 km), triangulated, and rotations sampled every 1 Myr; see `pipeline/`.
+**Plate model (data, CC BY 4.0).** Merdith, A.S., Williams, S.E., Collins, A.S., Tetley, M.G., Mulder, J.A., Blades, M.L., Young, A., Armistead, S.E., Cannon, J., Zahirovic, S., Müller, R.D. (2021). Extending full-plate tectonic models into deep time: Linking the Neoproterozoic and the Phanerozoic. *Earth-Science Reviews* 214, 103477. <https://doi.org/10.1016/j.earscirev.2020.103477>. Model files v1.2.4 from the EarthByte Group: <https://www.earthbyte.org/webdav/ftp/Data_Collections/Merdith_etal_2021_ESR/> (also Zenodo, <https://doi.org/10.5281/zenodo.13635864>). Changes made here: polygons simplified (~16 km), triangulated, and rotations sampled every 1 Myr; plate topologies resolved every 5 Myr; see `pipeline/`.
 
 The model compiles and builds on, and its readme asks users to cite: Domeier (2016, 2018); Merdith et al. (2017), *Gondwana Research* 50, 84–134; Young et al. (2019), *Geoscience Frontiers* 10(3), 989–1013; Matthews et al. (2016), *Global and Planetary Change* 146, 226–250; Tetley (2018), PhD thesis; Torsvik et al. (2019), *G-Cubed* 20(7), 3659–3689.
 

@@ -8,6 +8,8 @@ compact binaries to public/frames/:
                  and its valid-time window.
   rotations.bin  one unit quaternion per plate per 1 Myr step (750 Ma -> 0),
                  straight from the model's rotation file via pyGPlates.
+  boundaries.bin resolved plate boundaries every 5 Myr (subduction zones, ridges,
+                 transforms, other), as line segments grouped by frame and type.
   manifest.json  section offsets, times, plate list, model citation, hashes.
 
 The browser reconstructs any time by rotating each vertex with its plate's
@@ -44,6 +46,18 @@ MODEL_SHA256 = "ea247ec5f8975fb7e6034c8ec48704b11805fc6f520ee7526c5757b830386982
 MODEL_DIR = "SM2-Merdith_et_al_1_Ga_reconstruction_v1.2.4"
 ROT_FILE = "1000_0_rotfile_Merdith_et_al.rot"
 STATIC_POLYGONS = "shapes_static_polygons_Merdith_et_al.gpml"
+TOPOLOGY_FILES = [  # the plate-boundary files the model's .gproj loads
+    "250-0_plate_boundaries_Merdith_et_al.gpml",
+    "410-250_plate_boundaries_Merdith_et_al.gpml",
+    "1000-410-Topologies_Merdith_et_al.gpml",
+    "1000-410-Convergence_Merdith_et_al.gpml",
+    "1000-410-Divergence_Merdith_et_al.gpml",
+    "1000-410-Transforms_Merdith_et_al.gpml",
+    "TopologyBuildingBlocks_Merdith_et_al.gpml",
+]
+BOUNDARY_STEP_MA = 5
+# Order matters: the client draws one line set per type in this order.
+BOUNDARY_TYPES = ["SubductionZone", "MidOceanRidge", "Transform", "other"]
 LAYERS = [
     ("continents", "shapes_continents.gpml"),
     ("coastlines", "shapes_coastlines_Merdith_et_al_v2.gpmlz"),
@@ -365,6 +379,9 @@ def build(model: Path, verify: bool) -> dict:
     rot_bytes = i16(q).reshape(-1).tobytes()
     (OUT / "rotations.bin").write_bytes(rot_bytes)
 
+    bnd_bytes, bnd_meta = build_boundaries(model, rot_model)
+    (OUT / "boundaries.bin").write_bytes(bnd_bytes)
+
     manifest = {
         "version": 1,
         "model": {
@@ -380,6 +397,7 @@ def build(model: Path, verify: bool) -> dict:
         "geometry": {"file": "geometry.bin", "bytes": len(blob), "sha256": hashlib.sha256(blob).hexdigest(), "sections": sections},
         "rotations": {"file": "rotations.bin", "bytes": len(rot_bytes), "sha256": hashlib.sha256(rot_bytes).hexdigest(), "type": "<i2", "layout": "frame,plate,xyzw"},
         "layers": layers_meta,
+        "boundaries": bnd_meta,
         "singapore": {
             "lat": SINGAPORE[0],
             "lon": SINGAPORE[1],
@@ -392,11 +410,75 @@ def build(model: Path, verify: bool) -> dict:
         },
     }
     (OUT / "manifest.json").write_text(json.dumps(manifest, separators=(",", ":")) + "\n")
-    for f in ("geometry.bin", "rotations.bin", "manifest.json"):
+    for f in ("geometry.bin", "rotations.bin", "boundaries.bin", "manifest.json"):
         size = (OUT / f).stat().st_size
         print(f"{f}: {size / 1024:.0f} KiB")
         assert size < 25 * 1024 * 1024, f"{f} over 25 MiB"
     return manifest
+
+
+def build_boundaries(model: Path, rot_model) -> tuple[bytes, dict]:
+    """Resolve the model's topologies every BOUNDARY_STEP_MA and keep each shared boundary
+    sub-segment once, tagged by feature type. Points come straight from pyGPlates."""
+    fcs = [pygplates.FeatureCollection(str(model / f)) for f in TOPOLOGY_FILES]
+    times = list(range(0, OLDEST_MA + 1, BOUNDARY_STEP_MA))
+    segs: list[np.ndarray] = []
+    offsets = [0]
+    counts = {k: 0 for k in BOUNDARY_TYPES}
+    n = 0
+    for t in times:
+        sections = []
+        pygplates.resolve_topologies(fcs, rot_model, [], float(t), sections)
+        per_type: dict[str, list[np.ndarray]] = {k: [] for k in BOUNDARY_TYPES}
+        for sec in sections:
+            name = sec.get_feature().get_feature_type().get_name()
+            kind = name if name in per_type else "other"
+            for sub in sec.get_shared_sub_segments():
+                pts = ring_xyz(sub.get_resolved_geometry().get_points())
+                if len(pts) < 2:
+                    continue
+                d = densify_open(pts)
+                pairs = np.stack([d[:-1], d[1:]], axis=1).reshape(-1, 3)
+                per_type[kind].append(pairs)
+        for k in BOUNDARY_TYPES:
+            if per_type[k]:
+                arr = np.concatenate(per_type[k])
+                segs.append(arr)
+                n += len(arr)
+                if t == 0:
+                    counts[k] = len(arr) // 2
+            offsets.append(n)
+    pos = np.round(np.clip(np.concatenate(segs), -1, 1) * 32767).astype("<i2").reshape(-1)
+    off = np.array(offsets, dtype="<u4")
+    blob = bytearray(off.tobytes())
+    sections = [{"name": "offsets", "type": "<u4", "offset": 0, "length": int(off.size)}]
+    sections.append({"name": "position", "type": "<i2", "offset": len(blob), "length": int(pos.size)})
+    blob += pos.tobytes()
+    print(f"boundaries: {len(times)} frames, segments at 0 Ma by type {counts}")
+    assert all(counts[k] > 0 for k in BOUNDARY_TYPES[:3]), "missing a boundary type at present day"
+    meta = {
+        "file": "boundaries.bin",
+        "bytes": len(blob),
+        "sha256": hashlib.sha256(blob).hexdigest(),
+        "stepMa": BOUNDARY_STEP_MA,
+        "frames": len(times),
+        "types": BOUNDARY_TYPES,
+        "layout": "offsets[frame*types+type .. +1] are vertex ranges into position (xyz pairs = segments)",
+        "sections": sections,
+    }
+    return bytes(blob), meta
+
+
+def densify_open(line: np.ndarray) -> np.ndarray:
+    pts = [line[0]]
+    for a, b in zip(line[:-1], line[1:]):
+        ang = math.acos(max(-1.0, min(1.0, float(a @ b))))
+        n = max(1, math.ceil(ang / LINE_SEG_RAD))
+        for k in range(1, n + 1):
+            t = k / n
+            p = b if ang < 1e-9 or k == n else (math.sin((1 - t) * ang) * a + math.sin(t * ang) * b) / math.sin(ang)
+            pts.append(p / np.linalg.norm(p))
+    return np.array(pts)
 
 
 def verify_against_pygplates(model: Path, rot_model, plates, q, times):

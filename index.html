@@ -40,6 +40,18 @@
         <button id="focus" class="hs-btn hs-btn--ghost" type="button">Find Singapore</button>
       </div>
       <ul id="moments" class="moments" aria-label="Jump to"></ul>
+      <div class="bounds">
+        <button id="bounds" class="hs-chip" type="button" aria-pressed="false" aria-controls="bounds-key">Plate boundaries</button>
+        <div id="bounds-key" hidden>
+          <ul class="legend" aria-label="Boundary types">
+            <li><i class="sw sw--sub" aria-hidden="true"></i>Subduction zone</li>
+            <li><i class="sw sw--ridge" aria-hidden="true"></i>Mid-ocean ridge</li>
+            <li><i class="sw sw--tf" aria-hidden="true"></i>Transform</li>
+            <li><i class="sw sw--other" aria-hidden="true"></i>Other boundary</li>
+          </ul>
+          <p class="fine">Resolved from the model's plate topologies every 5 Myr; the lines snap to the nearest step.</p>
+        </div>
+      </div>
     </section>
 
     <section class="hs-card sg" aria-labelledby="h-sg">

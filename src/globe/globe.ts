@@ -2,8 +2,8 @@
 // on the GPU), palaeo-latitude guides, and the Singapore pin with its full 750 Myr track.
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import type { Geometry, Manifest, Quat, Rotations, Vec3 } from "../data/model";
-import { rotate, toXyz } from "../data/model";
+import type { Boundaries, Geometry, Manifest, Quat, Rotations, Vec3 } from "../data/model";
+import { boundaryFrameAt, boundaryRange, rotate, toXyz } from "../data/model";
 
 export interface Palette {
   ocean: string;
@@ -14,6 +14,8 @@ export interface Palette {
   guide: string;
   pin: string;
   track: string;
+  /** Plate boundaries, in BOUNDARY_TYPES order: subduction, ridge, transform, other. */
+  boundaries: [string, string, string, string];
 }
 
 export const PALETTES: Record<"dark" | "light", Palette> = {
@@ -26,6 +28,7 @@ export const PALETTES: Record<"dark" | "light", Palette> = {
     guide: "#a996e0",
     pin: "#e9a07f",
     track: "#e9a07f",
+    boundaries: ["#ff8f6b", "#4fe0a0", "#c4b5ff", "#8a9a82"],
   },
   light: {
     ocean: "#a9d8e6",
@@ -36,6 +39,7 @@ export const PALETTES: Record<"dark" | "light", Palette> = {
     guide: "#6a55b8",
     pin: "#b2502a",
     track: "#b2502a",
+    boundaries: ["#c2410c", "#0f7a4a", "#5b3fb8", "#5f6f58"],
   },
 };
 
@@ -111,6 +115,7 @@ export interface GlobeOptions {
   manifest: Manifest;
   geometry: Geometry;
   rotations: Rotations;
+  boundaries: Boundaries;
   reducedMotion: boolean;
 }
 
@@ -132,6 +137,7 @@ export class Globe {
   private flight: { from: THREE.Vector3; to: THREE.Vector3; t: number } | null = null;
   private readonly sgHome: Vec3;
   private onFrame?: () => void;
+  private boundaryLines: THREE.LineSegments[] = [];
 
   constructor(private readonly o: GlobeOptions) {
     const { canvas, manifest, geometry, rotations } = o;
@@ -198,6 +204,21 @@ export class Globe {
     outline.renderOrder = 3;
     earth.add(outline);
 
+    // resolved plate boundaries: one line set per type sharing one position buffer; the draw
+    // range picks the frame, so changing time never re-uploads geometry
+    const bPos = new THREE.BufferAttribute(o.boundaries.position, 3, true);
+    manifest.boundaries.types.forEach(() => {
+      const g = new THREE.BufferGeometry();
+      g.setAttribute("position", bPos);
+      const line = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ transparent: true, opacity: 0.95 }));
+      line.scale.setScalar(1.007);
+      line.frustumCulled = false;
+      line.renderOrder = 4;
+      line.visible = false;
+      this.boundaryLines.push(line);
+      earth.add(line);
+    });
+
     // palaeo-latitude guides: equator, tropics, polar circles (the model frame is palaeomagnetic)
     for (const lat of [0, 23.44, -23.44, 66.56, -66.56]) {
       const pts: THREE.Vector3[] = [];
@@ -254,12 +275,13 @@ export class Globe {
     this.land.forEach((m, i) => m.uniforms.uColor.value.set(colors[i]));
     this.guideMat.color.set(p.guide);
     this.scene.traverse((o) => {
-      if (o instanceof THREE.Line && o.material !== this.trackMat && o.material instanceof THREE.LineBasicMaterial && o.material !== this.guideMat) {
+      if (o instanceof THREE.Line && !this.boundaryLines.includes(o as THREE.LineSegments) && o.material !== this.trackMat && o.material instanceof THREE.LineBasicMaterial && o.material !== this.guideMat) {
         o.material.color.set(p.guide);
         o.material.opacity = 0.22;
       }
     });
     this.trackMat.color.set(p.track);
+    this.boundaryLines.forEach((l, i) => (l.material as THREE.LineBasicMaterial).color.set(p.boundaries[i]));
     for (const c of this.pin.children) ((c as THREE.Mesh).material as THREE.MeshBasicMaterial).color.set(p.pin);
   }
 
@@ -277,6 +299,13 @@ export class Globe {
     const p = toWorld(this.singaporeAt(ma), 1.008);
     this.pin.position.copy(p);
     this.pin.lookAt(p.clone().multiplyScalar(2));
+    const meta = this.o.manifest.boundaries;
+    const frame = boundaryFrameAt(meta, ma);
+    this.boundaryLines.forEach((l, i) => l.geometry.setDrawRange(...boundaryRange(meta, this.o.boundaries, frame, i)));
+  }
+
+  setBoundariesVisible(on: boolean): void {
+    for (const l of this.boundaryLines) l.visible = on;
   }
 
   get time(): number {
