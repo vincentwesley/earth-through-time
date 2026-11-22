@@ -49,3 +49,27 @@ for (const theme of ["dark", "light"] as const) {
     expect(violations).toEqual([]);
   });
 }
+
+test("plate boundaries toggle and legend", async ({ page }) => {
+  await page.goto("/?ma=250");
+  await expect(page.locator("body")).toHaveAttribute("data-ready", "true", { timeout: 30_000 });
+  const btn = page.getByRole("button", { name: "Plate boundaries" });
+  await expect(page.getByText("Subduction zone")).toBeHidden();
+  await btn.click();
+  await expect(btn).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText("Subduction zone")).toBeVisible();
+  expect(page.url()).toContain("b=1");
+  const { violations } = await new AxeBuilder({ page }).analyze();
+  expect(violations).toEqual([]);
+  await btn.click();
+  expect(page.url()).not.toContain("b=1");
+});
+
+test("?b=1 opens with boundaries in the light theme, axe clean", async ({ page }) => {
+  await page.goto("/?ma=600&b=1");
+  await expect(page.locator("body")).toHaveAttribute("data-ready", "true", { timeout: 30_000 });
+  await page.getByRole("button", { name: "Light theme" }).click();
+  await expect(page.getByText("Mid-ocean ridge")).toBeVisible();
+  const { violations } = await new AxeBuilder({ page }).analyze();
+  expect(violations).toEqual([]);
+});

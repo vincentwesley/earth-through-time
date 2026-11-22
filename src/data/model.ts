@@ -37,6 +37,7 @@ export interface Manifest {
   geometry: { file: string; bytes: number; sha256: string; sections: Section[] };
   rotations: { file: string; bytes: number; sha256: string; type: "<i2"; layout: "frame,plate,xyzw" };
   layers: Layer[];
+  boundaries: BoundaryMeta;
   singapore: {
     lat: number;
     lon: number;
@@ -48,6 +49,51 @@ export interface Manifest {
     path: [number, number][];
     pathStepMa: number;
   };
+}
+
+export const BOUNDARY_TYPES = ["SubductionZone", "MidOceanRidge", "Transform", "other"] as const;
+export type BoundaryType = (typeof BOUNDARY_TYPES)[number];
+
+export interface BoundaryMeta {
+  file: string;
+  bytes: number;
+  sha256: string;
+  stepMa: number;
+  frames: number;
+  types: BoundaryType[];
+  sections: Section[];
+}
+
+/** Resolved plate boundaries, already at their position for each frame (no rotation needed). */
+export interface Boundaries {
+  /** offsets[frame * types + type] .. offsets[... + 1] is that line set's vertex range. */
+  offsets: Uint32Array;
+  /** Segment end points as Int16 xyz pairs. */
+  position: Int16Array;
+}
+
+export function decodeBoundaries(manifest: Manifest, buf: ArrayBuffer): Boundaries {
+  const m = manifest.boundaries;
+  if (buf.byteLength !== m.bytes) throw new Error("boundaries.bin: size does not match manifest");
+  const get = (name: keyof Boundaries) => {
+    const s = m.sections.find((x) => x.name === name);
+    if (!s) throw new Error(`boundaries.bin: missing section ${name}`);
+    return new ARRAYS[s.type](buf, s.offset, s.length);
+  };
+  const out = { offsets: get("offsets") as Uint32Array, position: get("position") as Int16Array };
+  if (out.offsets.length !== m.frames * m.types.length + 1) throw new Error("boundaries.bin: offset table does not match manifest");
+  return out;
+}
+
+/** Boundaries are resolved every stepMa; show the nearest frame. */
+export function boundaryFrameAt(meta: BoundaryMeta, ma: number): number {
+  return clamp(Math.round(ma / meta.stepMa), 0, meta.frames - 1);
+}
+
+/** [first vertex, vertex count] of one boundary type in one frame. */
+export function boundaryRange(meta: BoundaryMeta, b: Boundaries, frame: number, type: number): [number, number] {
+  const i = frame * meta.types.length + type;
+  return [b.offsets[i], b.offsets[i + 1] - b.offsets[i]];
 }
 
 export interface Geometry {

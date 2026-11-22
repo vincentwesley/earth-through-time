@@ -2,9 +2,9 @@ import "./style.css";
 import "./credits/credits.js";
 import "./brand/logo-resize";
 import { applyTheme, nextTheme, type Theme } from "./theme";
-import { Rotations, decodeGeometry, distanceKm, toLatLon, clamp, type Manifest } from "./data/model";
+import { Rotations, decodeBoundaries, decodeGeometry, distanceKm, toLatLon, clamp, type Manifest } from "./data/model";
 import { MOMENTS, describeMa, formatLatLon, formatMa, latitudeBand, periodAt } from "./data/timescale";
-import { MAX_MA, readMa, writeMa } from "./url";
+import { MAX_MA, readBoundaries, readMa, writeBoundaries, writeMa } from "./url";
 
 const KEY = "theme";
 const store = {
@@ -38,6 +38,8 @@ const sgBand = $<HTMLElement>("#sg-band");
 const sgDist = $<HTMLElement>("#sg-dist");
 const sgNote = $<HTMLElement>("#sg-note");
 const label = $<HTMLElement>("#pin-label");
+const boundsBtn = $<HTMLButtonElement>("#bounds");
+const boundsKey = $<HTMLElement>("#bounds-key");
 
 type GlobeT = import("./globe/globe").Globe;
 let globe: GlobeT | null = null;
@@ -126,7 +128,20 @@ for (const m of MOMENTS) {
   moments.append(li);
 }
 
+let boundsOn = false;
+function setBounds(on: boolean): void {
+  boundsOn = on;
+  boundsBtn.setAttribute("aria-pressed", String(on));
+  boundsKey.hidden = !on;
+  globe?.setBoundariesVisible(on);
+}
+boundsBtn.addEventListener("click", () => {
+  setBounds(!boundsOn);
+  writeBoundaries(boundsOn);
+});
+
 show(readMa(location.search) ?? 250);
+setBounds(readBoundaries(location.search));
 
 async function load(): Promise<void> {
   const base = `${import.meta.env.BASE_URL}frames/`;
@@ -136,15 +151,24 @@ async function load(): Promise<void> {
     return res;
   };
   manifest = (await (await get("manifest.json")).json()) as Manifest;
-  const [g, r, mod] = await Promise.all([
+  const [g, r, b, mod] = await Promise.all([
     get(manifest.geometry.file).then((x) => x.arrayBuffer()),
     get(manifest.rotations.file).then((x) => x.arrayBuffer()),
+    get(manifest.boundaries.file).then((x) => x.arrayBuffer()),
     import("./globe/globe"),
   ]);
   rotations = new Rotations(manifest, new Int16Array(r));
   palettes = mod.PALETTES;
   const canvas = $<HTMLCanvasElement>("#globe");
-  globe = new mod.Globe({ canvas, manifest, geometry: decodeGeometry(manifest, g), rotations, reducedMotion });
+  globe = new mod.Globe({
+    canvas,
+    manifest,
+    geometry: decodeGeometry(manifest, g),
+    rotations,
+    boundaries: decodeBoundaries(manifest, b),
+    reducedMotion,
+  });
+  globe.setBoundariesVisible(boundsOn);
   globe.applyPalette(palettes[store.get()]);
   globe.onRender(() => {
     const p = globe!.pinScreen();

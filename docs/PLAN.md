@@ -16,7 +16,7 @@ src/main.ts ── UI: slider, play, jump chips, Singapore panel, theme, ?ma=
 A globe you can scrub from 750 Ma to today with reconstructed continents and a Singapore pin, polished, responsive, tested, deploy-ready.
 
 ## Next milestones
-2. **Plate boundaries:** resolve topologies per 5 Myr in the pipeline (ridges, subduction zones, transforms) as an optional layer.
+2. **Plate boundaries: done (2026-11-22).** Topologies resolved every 5 Myr in the pipeline; toggleable layer with legend and `?b=1`.
 3. **More pins:** a pick-a-place search over a small bundled city list, plus tap anywhere on today's globe to drop a pin (reverse-reconstruct a clicked point via the static polygons shipped as plate lookup).
 4. **Palaeolatitude chart** for the pin (sparkline of latitude vs time under the slider).
 5. **Model comparison:** add Cao et al. 2024 as a second dataset if its licence is confirmed.

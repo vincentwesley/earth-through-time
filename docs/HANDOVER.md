@@ -14,7 +14,11 @@ Milestone 1 (MVP) is built and verified locally: typecheck, lint, 11 unit tests,
 - Cloud sessions have Node 22 (repo targets 24); all checks pass on 22. Run e2e with `PW_CHROMIUM=/opt/pw-browsers/chromium npm run test:e2e` there.
 - `vincentwesley/gfx-kit` and `asset-vault` weren't in this session's GitHub scope, so the shaders (ocean fresnel, glow) are small and written inline. Nothing depends on a private repo.
 
-- 2026-11-17: `src/data/model.ts` and `timescale.ts` (never committed, lost) were reconstructed. The old `dist/` bundle did not contain them. Binary layout and the `Manifest` type come from `pipeline/build_frames.py`; maths from the pipeline (`qrot`, `unit`), the shader and `tests/`; period bases from the ICS chart v2024/12 PDF; colours from the ICS standard (Triassic, Jurassic and Tonian match the pixels in `docs/screenshots`); MOMENTS ages and labels from `docs/screenshots` (letter case inferred); `latitudeBand` Subtropics/Mid-latitudes at 35° and the "Polar regions" label are assumptions.
+- 2026-11-17: `src/data/model.ts` and `timescale.ts` (never committed, lost) were reconstructed. The old `dist/` bundle did not contain them. Binary layout and the `Manifest` type come from `pipeline/build_frames.py`; maths from the pipeline (`qrot`, `unit`), the shader and `tests/`; period bases from the ICS chart v2024/12 PDF; colours from the ICS standard (Triassic, Jurassic and Tonian match the pixels in `docs/screenshots`); MOMENTS ages and labels from `docs/screenshots` (letter case inferred); `latitudeBand` Subtropics/Mid-latitudes at 35° and the "Polar regions" label are assumptions. 2026-11-22: checked against the original files (still in the MVP session's container). Logic, values, ICS ages and colours, MOMENTS and the 35° cut all match the originals; only names and comments differ, and the original said "Polar circle". The cause was the old `data/` ignore rule also matching `src/data/`.
+
+## Milestone 2: plate boundaries (2026-11-22)
+- `pipeline/build_frames.py` resolves topologies every 5 Myr into `public/frames/boundaries.bin` (3.6 MB). `geometry.bin` and `rotations.bin` regenerate byte-identical.
+- A "Plate boundaries" toggle in the time panel with a 4-type legend, saved as `?b=1`. Verified: typecheck, lint, 17 unit tests, 40 e2e tests (`--timeout=150000`), build, and the production-CSP check.
 
 ## Known issues
 - In the dark theme, today's terrane outlines (from the model's coastline polygons) draw internal block boundaries too. That's real model detail, but it's busy at today's scale. Could fade outlines by zoom.

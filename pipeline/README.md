@@ -15,6 +15,7 @@ What it does:
 3. Samples every plate's finite rotation at 1 Myr steps from 750 Ma to present and stores them as Int16 quaternions.
 4. Finds Singapore's plate from the model's static polygons.
 5. **Verifies** that rotating present-day vertices by these quaternions matches `pygplates.reconstruct` (worst error printed, must be < 0.0001°).
-6. Writes `geometry.bin`, `rotations.bin`, `manifest.json` and fails if any file reaches 25 MiB.
+6. Resolves the model's plate topologies every 5 Myr and stores each boundary sub-segment once, by type (subduction, ridge, transform, other), in `boundaries.bin`. It fails if a present-day type is missing.
+7. Writes `geometry.bin`, `rotations.bin`, `boundaries.bin`, `manifest.json` and fails if any file reaches 25 MiB.
 
 The output is deterministic: rerunning with the same inputs reproduces byte-identical files (hashes are in `manifest.json`). Python 3.13, versions pinned in `requirements.txt`.

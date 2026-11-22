@@ -13,3 +13,4 @@
 11. **Shareable time** with `?ma=`.
 12. **GitHub:** the template's `ci.yml` and `automerge.yml` are kept unchanged but unused (Actions must be off). `.github/dependabot.yml` was **removed**: it scheduled npm and Actions version updates for the old starter folders, and the owner's rule forbids Dependabot version updates (its PRs would also trigger CI).
 13. **Pipeline outputs go in `public/frames/`**, not `data/`, because the house `.gitignore` ignores `data/`.
+14. **Plate boundaries resolved every 5 Myr and snapped, not interpolated.** Boundaries change shape (ridges jump, plates appear), so there is no honest way to tween them; 5 Myr keeps `boundaries.bin` at 3.6 MB and resolving takes ~30 s. Lines are stored already in position, grouped by frame and type, so a time change is just a draw-range change. Types: SubductionZone, MidOceanRidge, Transform, and everything else (inferred palaeo-boundaries, faults, etc.) as "other".
