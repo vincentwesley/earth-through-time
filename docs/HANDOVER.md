@@ -10,7 +10,7 @@ Milestone 1 (MVP) is built and verified locally: typecheck, lint, 11 unit tests,
 ## Notes
 - GitHub Actions is still enabled for the repo (the owner chose not to disable it; the session can't, as the proxy blocks the Actions API). Nothing here relies on Actions. `CI` fails at startup (see below), and `automerge.yml` only acts after a successful CI run, so it never merges anything. Public repos don't use paid Actions minutes on standard runners anyway.
 - `.github/workflows/ci.yml` calls the reusable workflow in the **private** `vincentwesley/house` repo from this **public** repo, which GitHub doesn't allow, so it would fail even with Actions on. It's left as is (Actions off). Starters PR #6 is meant to fix this.
-- `.github/dependabot.yml` from the template was removed (it scheduled version updates for the deleted starter folders, and Dependabot version updates are off-limits).
+- `.github/dependabot.yml` is tracked on `main` (re-added in the 2026-11-17 hygiene sweep, a1b6c33). It conflicts with CLAUDE.md's no-Dependabot rule; owner decision pending (see `docs/next-session.md`).
 - Cloud sessions have Node 22 (repo targets 24); all checks pass on 22. Run e2e with `PW_CHROMIUM=/opt/pw-browsers/chromium npm run test:e2e` there.
 - `vincentwesley/gfx-kit` and `asset-vault` weren't in this session's GitHub scope, so the shaders (ocean fresnel, glow) are small and written inline. Nothing depends on a private repo.
 

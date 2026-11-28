@@ -12,9 +12,9 @@
 - One branch and one PR per milestone; self-merge via `gh api` (see CLAUDE.md).
 
 ## Current state
-- Milestone 1 (MVP) merged to `main`.
-- Milestone 2 (plate boundaries) done 2026-11-22 on `claude/eloquent-wright-4gpyps`: `boundaries.bin`, toggle + legend, `?b=1`.
-- Milestone 3 (pins anywhere) done 2026-11-22: place picker, tap-to-drop at Today, `lookup.bin`.
+- Milestone 1 (MVP) merged to `main` (#4).
+- Milestone 2 (plate boundaries: `boundaries.bin`, toggle + legend, `?b=1`) merged to `main` (#6).
+- Milestone 3 (pins anywhere: place picker, tap-to-drop at Today, `lookup.bin`) merged to `main` (#7).
 
 - Branch `vin-atelier-brand` (unpushed): draggable Vin's Atelier logo + studio credits in the credits sign-off (`src/brand/`, `e2e/logo.spec.ts`).
 
